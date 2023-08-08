@@ -1,0 +1,80 @@
+function sendEmail(e) {
+  var params=""
+  var emailQuotaRemaining = MailApp.getRemainingDailyQuota();
+  console.log("Remaining email quota: " + emailQuotaRemaining);
+  params=params + "<p>Remaining email quota: " + emailQuotaRemaining + "</p>\n"
+
+  var count=0;
+  var ss = SpreadsheetApp.openById("1sMxr3AOlQbq2S8VKc3xHsvwouaX-ST7ADVNpBfvWDc0");
+  SpreadsheetApp.setActiveSpreadsheet(ss);
+
+  // var sheet1 =ss.getSheetByName('Form Responses 1');
+  var sheet1=ss.getSheetByName('Sheet2');
+  var n=sheet1.getLastRow();
+
+  // var l = Number(e.queryString);
+  var l = 2;
+
+  if (l == 0) { l = 900 }
+  if (l >= n) { l = n-10 }
+
+  for (var i = l; i < n+1 ; i++ ) {
+  var nomor = sheet1.getRange(i,1).getValue();
+  var npm = sheet1.getRange(i,3).getValue();
+  var nama = sheet1.getRange(i,2).getValue();
+  var emailAddress = sheet1.getRange(i,4).getValue();
+  var isAman = sheet1.getRange(i,5).getValue();
+
+  var mailSent = sheet1.getRange(i,6).getValue();
+  var subject = 'Surat Rekomendasi MSIB Batch 5 Tahun 2023';
+  if(isAman == 1) {
+    if (nomor >= 3000) {
+      if (mailSent != 1) {
+        var message = 'Halo, Mahasiswa/i Calon Peserta MSIB Batch 5\nBerikut kami kirimkan Surat Rekomendasi dan SPTJM yang telah ditandatangani oleh Kepala CIL.\n\nSilahkan abaikan pesan ini jika sudah menerima dokumen yang sama.\n\nSalam,\nCIL UI';
+        if (mailSent == 0) {
+          fileCount=0
+          var folderId = '1nIFXczqZnL2pzDNiS363uxLDwZfqOHQ0'; //Folder SR Head
+          var folderId2 = '1jFWX_qVoiyfeu7CP8E0--7nZ3CfUOmDa'; //Folder SPTJM Head
+
+          // var folderId = '1uwzfW7oU0vre7b6yt8O8N4xCodSjuAYl'; //Folder Individu SR B5 2006606201_Galuh Nirukti Sangadi
+          // var fileSR = DriveApp.getFolderById(folderId).getFilesByName("SR B5 "+npm+"_"+nama+".pdf");//Enter folder id
+          var fileSR = DriveApp.getFolderById(folderId).searchFiles('title contains "'+npm+'"');
+
+          // var fileSPTJM = DriveApp.getFolderById(folderId2).getFilesByName("SPTJM_"+nama+"_"+npm+".pdf");//Enter folder id
+          var fileSPTJM = DriveApp.getFolderById(folderId2).searchFiles('title contains "'+npm+'"');
+
+
+          var file = []
+          var fileCount = 0
+          while (fileSR.hasNext()){
+            file[fileCount]=fileSR.next().getAs(MimeType.PDF);
+            fileCount++
+          }
+          while (fileSPTJM.hasNext()){
+            file[fileCount]=fileSPTJM.next().getAs(MimeType.PDF);
+            fileCount++
+          }
+          
+          console.log(fileCount)
+          params=params + "<p>"+fileCount+"<br />\n"
+          if (fileCount>1) {
+            MailApp.sendEmail(emailAddress, subject, message, {
+              name: 'Automatic Emailer CIL',
+              attachments: file
+            });
+            sheet1.getRange(i,6).setValue(1)
+            count++;
+            console.log(count+'Sending to:'+emailAddress+', subject:'+subject+'\n'+message+'mailSent:'+mailSent)
+            params=params + count +' Sending to:'+emailAddress+', subject:'+subject+'<br />\n'+message+'mailSent:'+mailSent + "</p>\n"
+          }
+        }
+      } else {
+        console.log("Error jink")
+      }
+    }
+  }
+  }
+
+  return HtmlService.createHtmlOutput(params);
+}
+
