@@ -1,0 +1,91 @@
+function moveBangkitFiles(e) {
+var params=""
+var count=0;
+var ss = SpreadsheetApp.openById("1SVSvJV86u41f9YmlIkuHLD3BkyE-aY7RvtESNi_hhbM");  // MSIB 4 Test
+SpreadsheetApp.setActiveSpreadsheet(ss);
+
+var sheet1=ss.getSheetByName('BangkitSendEmail');
+var n=sheet1.getLastRow();
+
+//var l = Number(e.queryString);
+var l = 2
+if (l == 0) { l = 2 }
+if (l >= n) { l = n-10 }
+
+var emailIdx=-1
+for (var i = 1; i < 7; i++) {
+  var judulKolom = sheet1.getRange(1,i).getValue();
+  if (judulKolom.includes("Email Address")) { emailIdx=i  }
+
+}
+var namaIdx=-1
+for (var i = l; i < 7; i++) {
+  var judulKolom = sheet1.getRange(1,i).getValue();
+  if (judulKolom.includes("Nama (Gunakan Huruf Besar di Setiap Bagian Depan Nama Anda)")) { namaIdx=i  }
+
+}
+var npmIdx=-1
+for (var i = 1; i < 7; i++) {
+  var judulKolom = sheet1.getRange(1,i).getValue();
+  if (judulKolom.includes("NPM")) { npmIdx=i  }
+
+}
+var noSuratIdx=-1
+for (var i = 1; i < 7; i++) {
+  var judulKolom = sheet1.getRange(1,i).getValue();
+  if (judulKolom.includes("No")) { noSuratIdx=i  }
+
+}
+var mailSentIdx
+for (var i = 1; i < 7; i++) {
+  var judulKolom = sheet1.getRange(1,i).getValue();
+  if (judulKolom.includes("EmailSent")) { mailSentIdx=i  }
+}
+
+for (var i = 2; i < n+1 ; i++ ) {
+  var nama = sheet1.getRange(i,namaIdx).getValue();
+  var npm = sheet1.getRange(i,npmIdx).getValue();
+  var noSurat = Number(sheet1.getRange(i,noSuratIdx).getValue());
+  var mailSent = sheet1.getRange(i,mailSentIdx).getValue(); 
+
+  var namaFolderKu = npm
+
+  if (noSurat > 0) {
+    if (mailSent < 1) {
+        fileCount=0
+        var folderId = '1h2ZsnkffkAI1FcWjvaJegfxnXYWTojsy'; // Folder Bangkit Otomatis
+        // var folderId = '1uwzfW7oU0vre7b6yt8O8N4xCodSjuAYl'; // Folder Individu
+        var srcFolderId = '17DruH5c7zCS3F_9dGXnR_c8DJ6M2RfXA'; //Sumber Folder SPTJM SR Bangkit
+        
+        // Cek jika file tersedia di SR
+        console.log("S:"+namaFolderKu)
+        var srcFolder = DriveApp.getFolderById(srcFolderId)
+        var dstFolder = DriveApp.getFolderById(folderId)
+        var files = srcFolder.searchFiles('title contains "'+namaFolderKu+'"')
+        while (files.hasNext()){
+          var file=files.next()
+          console.log('Moving'+file.getName())            
+          var folders = dstFolder.searchFolders('title contains "'+namaFolderKu+'"');
+          var hasFolder = false;
+          while (folders.hasNext()) {
+            var folder = folders.next();
+            //namaFolder = folder.getName().substring(0,namaFolderKu.length)
+            //if (namaFolder == namaFolderKu) {
+            console.log('Moving to existing Folder '+folder.getName())
+            file.moveTo(folder);
+            hasFolder = true
+            //}
+          }
+          if (!hasFolder) {
+            folder = dstFolder.createFolder(namaFolderKu)
+            console.log('Moving to new Folder created '+namaFolderKu)
+            file.moveTo(folder);
+          }
+        }
+        params=params + "<p>"+fileCount+"<br />\n"
+      }
+    }
+  }
+
+return HtmlService.createHtmlOutput(params);
+}
